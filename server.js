@@ -171,9 +171,18 @@ app.get('/api/test', (req, res) => {
   res.json({ ok: true, message: 'Server is running!' });
 });
 
+// Serve static files from public directory
+app.use(express.static('public'));
+
+// Vercel serverless handler
+module.exports = app;
+
+// For local development
 const PORT = process.env.PORT || 4000;
-app.listen(PORT, () => {
-  console.log(`Server listening on http://localhost:${PORT}`);
-  console.log(`Test endpoint: http://localhost:${PORT}/api/test`);
-});
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`Server listening on http://localhost:${PORT}`);
+    console.log(`Test endpoint: http://localhost:${PORT}/api/test`);
+  });
+}
 

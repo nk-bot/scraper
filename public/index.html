@@ -44,6 +44,11 @@
     const resultEl = $('#result');
     const btn = $('#fetchBtn');
     const input = $('#url');
+    
+    // Auto-detect API URL for local development vs production
+    const API_BASE = window.location.hostname === 'localhost' 
+      ? 'http://localhost:4000' 
+      : window.location.origin;
 
     async function fetchProduct() {
       const url = input.value.trim();
@@ -56,7 +61,7 @@
       resultEl.innerHTML = '';
 
       try {
-        const resp = await fetch('http://localhost:4000/api/product?' + new URLSearchParams({ url }), { method: 'GET' });
+        const resp = await fetch(`${API_BASE}/api/product?` + new URLSearchParams({ url }), { method: 'GET' });
         const json = await resp.json();
         if (!resp.ok || !json.ok) {
           throw new Error((json && (json.message || json.error)) || 'Request failed');
@@ -114,7 +119,7 @@
     // Test connection on load
     window.addEventListener('load', async () => {
       try {
-        const resp = await fetch('http://localhost:4000/api/test');
+        const resp = await fetch(`${API_BASE}/api/test`);
         const data = await resp.json();
         if (data.ok) {
           statusEl.textContent = 'Ready to fetch product details.';
