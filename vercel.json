@@ -1,4 +1,6 @@
 {
+  "buildCommand": null,
+  "framework": null,
   "routes": [
     {
       "src": "/(.*)",
