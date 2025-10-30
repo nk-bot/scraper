@@ -118,22 +118,28 @@ function parseProduct(html, url) {
 }
 
 module.exports = async (req, res) => {
-  // CORS headers
-  res.setHeader('Access-Control-Allow-Credentials', true);
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version');
-
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
-
-  const url = req.query.url;
-  if (!url) {
-    return res.status(400).json({ error: 'Missing url query param' });
-  }
-
   try {
+    // CORS headers
+    res.setHeader('Access-Control-Allow-Credentials', true);
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,POST');
+    res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version');
+
+    if (req.method === 'OPTIONS') {
+      res.status(200).end();
+      return;
+    }
+
+    console.log('Product API called:', req.method, req.url);
+    
+    const url = req.query.url || req.body?.url;
+    console.log('URL received:', url);
+    
+    if (!url) {
+      console.error('No URL provided');
+      return res.status(400).json({ error: 'Missing url query param or body' });
+    }
+
     console.log(`Fetching: ${url}`);
 
     const response = await axios.get(url, {
@@ -154,12 +160,11 @@ module.exports = async (req, res) => {
     const data = parseProduct(response.data, url);
     return res.json({ ok: true, data });
   } catch (err) {
-    console.error(`Error fetching ${url}:`, err.message);
+    console.error('Top level error:', err);
     return res.status(500).json({
       ok: false,
-      error: 'Failed to fetch or parse product page',
-      message: err.message,
-      details: err.response?.status ? `HTTP ${err.response.status}` : undefined,
+      error: 'Internal server error',
+      message: err.message
     });
   }
 };
