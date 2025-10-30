@@ -64,7 +64,9 @@
         const resp = await fetch(`${API_BASE}/api/product?` + new URLSearchParams({ url }), { method: 'GET' });
         const json = await resp.json();
         if (!resp.ok || !json.ok) {
-          throw new Error((json && (json.message || json.error)) || 'Request failed');
+          const errorMsg = json.error || json.message || 'Request failed';
+          const statusInfo = json.statusCode ? ` (HTTP ${json.statusCode})` : '';
+          throw new Error(errorMsg + statusInfo);
         }
         const p = json.data;
 
@@ -107,9 +109,14 @@
         statusEl.textContent = 'Done.';
       } catch (e) {
         statusEl.textContent = 'Error: ' + e.message;
-        resultEl.innerHTML = `<div style="color: #dc2626; padding: 12px; background: #fee2e2; border-radius: 8px;">
-          <strong>Error:</strong> ${e.message}<br/>
-          <small>Make sure the server is running and try a different product URL.</small>
+        const errorMsg = e.message;
+        const isBlocked = errorMsg.includes('blocking') || errorMsg.includes('rate limiting') || errorMsg.includes('529');
+        const suggestion = isBlocked 
+          ? '<strong>💡 Try:</strong> A different e-commerce site, or use a scraping API service.' 
+          : '<strong>💡 Try:</strong> Make sure the URL is valid and accessible.';
+        resultEl.innerHTML = `<div style="color: #dc2626; padding: 16px; background: #fee2e2; border-radius: 8px; border-left: 4px solid #dc2626;">
+          <strong>Error:</strong> ${errorMsg}<br/><br/>
+          <div style="color: #991b1b; margin-top: 8px;">${suggestion}</div>
         </div>`;
       } finally {
         btn.disabled = false;

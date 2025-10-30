@@ -161,10 +161,42 @@ module.exports = async (req, res) => {
     return res.json({ ok: true, data });
   } catch (err) {
     console.error('Top level error:', err);
+    
+    // Handle specific error cases
+    const statusCode = err.response?.status || 500;
+    
+    if (statusCode === 529 || statusCode === 503 || statusCode === 429) {
+      return res.status(500).json({
+        ok: false,
+        error: 'Site is blocking requests or rate limiting',
+        message: 'The website is blocking automated access. Try a different URL or use a scraping service.',
+        statusCode
+      });
+    }
+    
+    if (statusCode === 404) {
+      return res.status(500).json({
+        ok: false,
+        error: 'Product page not found',
+        message: 'The URL does not exist or has been removed.',
+        statusCode
+      });
+    }
+    
+    if (statusCode === 403) {
+      return res.status(500).json({
+        ok: false,
+        error: 'Access forbidden',
+        message: 'The website is blocking this request. Many e-commerce sites block automated scraping.',
+        statusCode
+      });
+    }
+    
     return res.status(500).json({
       ok: false,
-      error: 'Internal server error',
-      message: err.message
+      error: 'Failed to fetch product',
+      message: err.message || 'Unknown error occurred',
+      statusCode
     });
   }
 };
