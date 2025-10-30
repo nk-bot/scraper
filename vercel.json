@@ -1,6 +1,17 @@
 {
   "buildCommand": null,
   "framework": null,
+  "functions": {
+    "api/product.js": {
+      "maxDuration": 30
+    },
+    "api/test.js": {
+      "maxDuration": 10
+    },
+    "api/hello.js": {
+      "maxDuration": 10
+    }
+  },
   "routes": [
     {
       "src": "/(.*)",
