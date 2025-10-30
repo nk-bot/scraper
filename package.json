@@ -1,0 +1,13 @@
+﻿{
+  "name": "product-scraper",
+  "version": "1.0.0",
+  "description": "Product scraper API",
+  "main": "server.js",
+  "dependencies": {
+    "express": "^4.18.2",
+    "axios": "^1.6.0",
+    "cheerio": "^1.0.0-rc.12",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1"
+  }
+}

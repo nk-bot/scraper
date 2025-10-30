@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Product Details Fetcher</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 24px; background: #fafafa; color: #111; }
+    .container { max-width: 900px; margin: 0 auto; }
+    .card { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.04); }
+    .row { display: flex; gap: 12px; }
+    input[type="url"] { flex: 1; padding: 12px 14px; border: 1px solid #d1d5db; border-radius: 10px; font-size: 15px; }
+    button { padding: 12px 16px; background: #111827; color: #fff; border: none; border-radius: 10px; cursor: pointer; font-weight: 600; }
+    button:disabled { background: #6b7280; cursor: not-allowed; }
+    .grid { display: grid; grid-template-columns: 1fr 2fr; gap: 16px; margin-top: 16px; }
+    .thumbs { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 10px; }
+    img { width: 100%; height: 110px; object-fit: cover; border-radius: 10px; border: 1px solid #e5e7eb; }
+    h2 { margin: 0 0 8px; font-size: 20px; }
+    .muted { color: #6b7280; }
+    .kv { display: grid; grid-template-columns: 160px 1fr; gap: 8px; margin-top: 12px; }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 999px; background: #eef2ff; color: #3730a3; font-size: 12px; }
+    pre { white-space: pre-wrap; word-break: break-word; background: #f3f4f6; padding: 12px; border-radius: 8px; border: 1px solid #e5e7eb; }
+    .footer { margin-top: 10px; font-size: 12px; color: #6b7280; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <div class="row">
+        <input id="url" type="url" placeholder="Paste a product URL or any webpage" />
+        <button id="fetchBtn">Fetch</button>
+      </div>
+      <div style="margin-top: 8px; font-size: 12px; color: #6b7280;">
+        Try: <a href="#" onclick="document.getElementById('url').value='https://example.com'; return false;" style="color: #2563eb;">example.com</a> or any news/article URL
+      </div>
+      <div id="status" class="footer"></div>
+      <div id="result" style="margin-top:20px;"></div>
+    </div>
+  </div>
+
+  <script>
+    const $ = (sel) => document.querySelector(sel);
+    const statusEl = $('#status');
+    const resultEl = $('#result');
+    const btn = $('#fetchBtn');
+    const input = $('#url');
+
+    async function fetchProduct() {
+      const url = input.value.trim();
+      if (!url) {
+        statusEl.textContent = 'Please paste a product URL.';
+        return;
+      }
+      statusEl.textContent = 'Fetching…';
+      btn.disabled = true;
+      resultEl.innerHTML = '';
+
+      try {
+        const resp = await fetch('http://localhost:4000/api/product?' + new URLSearchParams({ url }), { method: 'GET' });
+        const json = await resp.json();
+        if (!resp.ok || !json.ok) {
+          throw new Error((json && (json.message || json.error)) || 'Request failed');
+        }
+        const p = json.data;
+
+        resultEl.innerHTML = `
+          <div class="grid">
+            <div>
+              <div class="thumbs">
+                ${p.images?.map(src => `<img src="${src}" alt="image" />`).join('') || ''}
+              </div>
+            </div>
+            <div>
+              <h2>${p.title || 'Untitled product'}</h2>
+              <div class="muted">${p.brand ? `<span class="badge">${p.brand}</span>` : ''}</div>
+              <div class="kv"><div>Price</div><div><strong>${p.price || '-'}</strong> ${p.currency || ''}</div></div>
+              <div class="kv"><div>Availability</div><div>${p.availability || '-'}</div></div>
+              <div class="kv"><div>Rating</div><div>${p.rating || '-'}</div></div>
+              <div class="kv"><div>SKU</div><div>${p.sku || '-'}</div></div>
+              <div class="kv"><div>URL</div><div><a href="${p.url}" target="_blank" rel="noreferrer">${p.url}</a></div></div>
+              <div style="margin-top:12px;">
+                <div class="muted">Description</div>
+                <div>${p.description || '-'}</div>
+              </div>
+              ${p.specs?.length ? `
+                <div style="margin-top:12px;">
+                  <div class="muted">Specifications</div>
+                  <div>
+                    ${p.specs.map(s => `<div class="kv"><div>${s.key}</div><div>${s.value}</div></div>`).join('')}
+                  </div>
+                </div>` : ''
+              }
+            </div>
+          </div>
+          <div style="margin-top:16px;">
+            <details>
+              <summary>Raw JSON</summary>
+              <pre>${JSON.stringify(p, null, 2)}</pre>
+            </details>
+          </div>
+        `;
+        statusEl.textContent = 'Done.';
+      } catch (e) {
+        statusEl.textContent = 'Error: ' + e.message;
+        resultEl.innerHTML = `<div style="color: #dc2626; padding: 12px; background: #fee2e2; border-radius: 8px;">
+          <strong>Error:</strong> ${e.message}<br/>
+          <small>Make sure the server is running and try a different product URL.</small>
+        </div>`;
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    // Test connection on load
+    window.addEventListener('load', async () => {
+      try {
+        const resp = await fetch('http://localhost:4000/api/test');
+        const data = await resp.json();
+        if (data.ok) {
+          statusEl.textContent = 'Ready to fetch product details.';
+        }
+      } catch (e) {
+        statusEl.textContent = 'Cannot connect to server. Make sure it is running.';
+        statusEl.style.color = '#dc2626';
+      }
+    });
+
+    btn.addEventListener('click', fetchProduct);
+    input.addEventListener('keydown', (e) => { if (e.key === 'Enter') fetchProduct(); });
+  </script>
+</body>
+</html>
+
